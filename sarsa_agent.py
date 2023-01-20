@@ -5,8 +5,9 @@ import gymnasium as gym
 class SarsaAgent(Agent):
     def __init__(self,
                  environment: gym.Env,
-                 initial_position, ):
-        super(SarsaAgent, self).__init__(environment, initial_position)
+                 initial_position,
+                 regression_level: int):
+        super(SarsaAgent, self).__init__(environment, initial_position, regression_level)
 
     def train_agent(self):
         for episode in range(self.episode_count):

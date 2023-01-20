@@ -7,13 +7,15 @@ class Agent:
     def __init__(self,
                  environment: gym.Env,
                  initial_position,
+                 regression_level: int,
                  learning_rate: float = 0.95,
                  discount: float = 0.95,
                  learning_decay: float = 0.9,
                  learning_min: float = 0.1,
                  epsilon: float = 1,
                  epsilon_min: float = 0.1,
-                 episode_count: int = 100
+                 episode_count: int = 100,
+                 regression_lambda: float = 0.95,
                  ):
         self.env = environment
         self.discount = discount
@@ -24,6 +26,8 @@ class Agent:
         self.epsilon_decay = epsilon / episode_count
         self.epsilon_min = epsilon_min
         self.episode_count = episode_count
+        self.regression_lambda = regression_lambda
+        self.regression_level = regression_level
 
         # statics
         self.mid_point = initial_position[0]
@@ -70,6 +74,29 @@ class Agent:
     def calculate_acceleration(curr_vel, next_vel):
         return abs(curr_vel - next_vel)
 
+    def calculate_l_weight(self, index, diff, feature_val):
+        self.weights[index] = self.weights[index] + self.learning_rate * diff * feature_val
+
+    def calculate_l1_weight(self, index, diff, feature_val):
+        if self.weights[index] >= 0:
+            self.weights[index] = (self.weights[index] - self.regression_lambda) \
+                                  + self.learning_rate * diff * feature_val
+        else:
+            self.weights[index] = (self.weights[index] + self.regression_lambda) \
+                                  + self.learning_rate * diff * feature_val
+
+    def calculate_l2_weight(self, index, diff, feature_val):
+        self.weights[index] = (self.weights[index] - 2 * self.regression_lambda * self.weights[index]) \
+                              + self.learning_rate * diff * feature_val
+
+    def calculate_weight(self, i, diff, feature_value):
+        if self.regression_level == 0:
+            self.calculate_l_weight(i, diff, feature_value)
+        elif self.regression_level == 1:
+            self.calculate_l1_weight(i, diff, feature_value)
+        elif self.regression_level == 2:
+            self.calculate_l2_weight(i, diff, feature_value)
+
     def acceleration_feature(self, state, action):
         _, curr_vel = state
         next_vel = self.next_velocity(state, action)
@@ -80,9 +107,7 @@ class Agent:
 
     def dist_to_end_feature(self, state, action):
         pos, vel = state
-        next_vel = self.next_velocity(state, action)
         next_pos = self.next_position(state, action)
-        interval = self.right_end - self.left_end
         if vel <= 0:
             return 1 / abs(self.left_end - next_pos)
         return 1 / abs(self.right_end - next_pos)
@@ -133,5 +158,5 @@ class Agent:
         diff = target - prediction
         for i in range(self.features_num):
             feature_value = self.features[i](curr_state, action)
-            self.weights[i] = self.weights[i] + self.learning_rate * diff * feature_value
+            self.calculate_weight(i, diff, feature_value)
         self.make_weights_normal()

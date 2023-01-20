@@ -15,10 +15,11 @@ from sarsa_agent import SarsaAgent
 
 env = gym.make("MountainCar-v0", max_episode_steps=1000)
 print(env.spec)
-observation, _ = env.reset(seed=46)
+observation, _ = env.reset(seed=756)
 print(f'initial state --- OBS :: {observation}')
+
 # choose from SarsaMaxAgent and SarsaAgent
-mc_agent = SarsaMaxAgent(environment=env, initial_position=observation)
+mc_agent = SarsaMaxAgent(environment=env, initial_position=observation, regression_level=0)
 mc_agent.train_agent()
 env.close()
 env = gym.make("MountainCar-v0", max_episode_steps=200, render_mode='human')
