@@ -12,24 +12,24 @@ AI agent for Mountain Car problem of class Classic Control
 import gymnasium as gym
 from agent import Agent
 
-env = gym.make("MountainCar-v0", render_mode='human', max_episode_steps=2000)
+env = gym.make("MountainCar-v0", max_episode_steps=1000)
 observation, _ = env.reset(seed=42)
 print(f'initial state --- OBS :: {observation}')
 #
-mc_agent = Agent(environment=env)
+mc_agent = Agent(environment=env, initial_position=observation)
 mc_agent.train_agent()
+env.close()
+env = gym.make("MountainCar-v0", max_episode_steps=2000, render_mode='human')
+truncated = False
+terminated = False
 
-# env = gym.make("MountainCar-v0", render_mode='human')
-# truncated = False
-# terminated = False
-#
-# for _ in range(3):
-#     observation, info = env.reset()
-#     done = truncated or terminated
-#     while not done:
-#         action = env.action_space.sample()
-#         observation, reward, terminated, truncated, _ = env.step(action)
-#         print(f'new data: observation :: {observation}, reward :: {reward}, '
-#               f'terminated :: {terminated}, truncated :: {truncated}')
-#         done = terminated or truncated
-# env.close()
+for _ in range(3):
+    observation, info = env.reset()
+    done = False
+    while not done:
+        action = mc_agent.choose_action(observation, True)
+        observation, reward, terminated, truncated, _ = env.step(action)
+        print(f'new data: observation :: {observation}, reward :: {reward}, '
+              f'terminated :: {terminated}, truncated :: {truncated}')
+        done = terminated or truncated
+env.close()
