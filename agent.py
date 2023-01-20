@@ -32,23 +32,33 @@ class Agent:
         self.right_end = 0.6
         self.left_end = -1.2
         # features
-        self.features_num = 3
+        self.features_num = 2
         self.features = [
             # self.acceleration_feature,
             self.dist_to_end_feature,
-            self.next_velocity,
+            # self.next_velocity,
             self.dist_to_mid_feature
         ]
-        self.weights = [0, 0, 0]
+        self.weights = [0, 0]
 
     def next_velocity(self, state, action):
         position, velocity = state
-        return velocity + (action - 1) * self.force - cos(3 * position) * self.gravity
+        next_vel = velocity + (action - 1) * self.force - cos(3 * position) * self.gravity
+        if next_vel <= -0.7:
+            next_vel = -0.7
+        elif next_vel >= 0.7:
+            next_vel = 0.7
+        return next_vel
 
     def next_position(self, state, action):
         position, _ = state
         next_vel = self.next_velocity(state, action)
-        return next_vel * position
+        next_pos = next_vel * position
+        if next_pos <= -1.2:
+            next_pos = -1.2
+        elif next_pos >= 0.6:
+            next_pos = 0.6
+        return next_pos
 
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
@@ -116,3 +126,12 @@ class Agent:
         else:
             return int(np.argmax([self.get_qvalue(curr_state, action)
                                   for action in range(self.env.action_space.n)]))
+
+    def update_weights(self, curr_state, action, reward, terminated, dynamic_val):
+        target = reward + self.discount * dynamic_val * (not terminated)
+        prediction = self.get_qvalue(curr_state, action)
+        diff = target - prediction
+        for i in range(self.features_num):
+            feature_value = self.features[i](curr_state, action)
+            self.weights[i] = self.weights[i] + self.learning_rate * diff * feature_value
+        self.make_weights_normal()
