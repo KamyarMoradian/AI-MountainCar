@@ -13,11 +13,11 @@ class Agent:
                  learning_min: float = 0.1,
                  epsilon: float = 1,
                  epsilon_min: float = 0.1,
-                 episode_count: int = 200
+                 episode_count: int = 100
                  ):
         self.env = environment
-        self.learning_rate = learning_rate
         self.discount = discount
+        self.learning_rate = learning_rate
         self.learning_decay = learning_decay
         self.learning_min = learning_min
         self.epsilon = epsilon
@@ -34,6 +34,7 @@ class Agent:
         # features
         self.features_num = 3
         self.features = [
+            # self.acceleration_feature,
             self.dist_to_end_feature,
             self.next_velocity,
             self.dist_to_mid_feature
@@ -63,9 +64,9 @@ class Agent:
         _, curr_vel = state
         next_vel = self.next_velocity(state, action)
         acceleration = self.calculate_acceleration(curr_vel, next_vel)
-        if acceleration <= 0.0001:
-            return (0.0001 - acceleration) * -10
-        return acceleration
+        if abs(acceleration) <= 0.0001:
+            return (0.0001 - abs(acceleration)) * -10
+        return acceleration * 10
 
     def dist_to_end_feature(self, state, action):
         pos, vel = state
@@ -105,16 +106,6 @@ class Agent:
         for i in range(self.features_num):
             self.weights[i] /= weights_sum
 
-    def update_all_weights(self, curr_state, action, reward, terminated, next_state):
-        max_q_value = self.find_max_q_value(next_state)
-        target = reward + self.discount * max_q_value * (not terminated)
-        prediction = self.get_qvalue(curr_state, action)
-        diff = target - prediction
-        for i in range(self.features_num):
-            feature_value = self.features[i](curr_state, action)
-            self.weights[i] = self.weights[i] + self.learning_rate * diff * feature_value
-        self.make_weights_normal()
-
     def choose_action(self, curr_state, test_mode=False):
         if test_mode:
             return int(np.argmax([self.get_qvalue(curr_state, action)
@@ -125,20 +116,3 @@ class Agent:
         else:
             return int(np.argmax([self.get_qvalue(curr_state, action)
                                   for action in range(self.env.action_space.n)]))
-
-    def train_agent(self):
-        terminated = truncated = False
-        for episode in range(self.episode_count):
-            print(f'episode number {episode} ::: final weights = {self.weights}')
-            obs, _ = self.env.reset()
-            done = False
-            count = 1
-            while not done:
-                action = self.choose_action(obs)
-                next_obs, reward, terminated, truncated, _ = self.env.step(action)
-                self.update_all_weights(curr_state=obs, action=action, reward=int(float(reward)),
-                                        terminated=terminated, next_state=next_obs)
-                done = terminated or truncated
-                obs = next_obs
-                count += 1
-            self.decay_learning_rate()

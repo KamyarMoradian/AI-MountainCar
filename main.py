@@ -8,28 +8,30 @@ AI agent for Mountain Car problem of class Classic Control
         maximum step: 200
         reward threshold: -110
 """
+import random
 
 import gymnasium as gym
-from agent import Agent
+from sarsa_max_agent import SarsaMaxAgent
 
 env = gym.make("MountainCar-v0", max_episode_steps=1000)
-observation, _ = env.reset(seed=42)
+print(env.spec)
+observation, _ = env.reset(seed=46)
 print(f'initial state --- OBS :: {observation}')
 #
-mc_agent = Agent(environment=env, initial_position=observation)
+mc_agent = SarsaMaxAgent(environment=env, initial_position=observation)
 mc_agent.train_agent()
 env.close()
-env = gym.make("MountainCar-v0", max_episode_steps=2000, render_mode='human')
+env = gym.make("MountainCar-v0", max_episode_steps=200, render_mode='human')
 truncated = False
 terminated = False
 
-for _ in range(3):
-    observation, info = env.reset()
+for _ in range(20):
+    rand_seed = random.randint(30, 2000)
+    print(f'seed = {rand_seed}')
+    observation, info = env.reset(seed=rand_seed)
     done = False
     while not done:
         action = mc_agent.choose_action(observation, True)
         observation, reward, terminated, truncated, _ = env.step(action)
-        print(f'new data: observation :: {observation}, reward :: {reward}, '
-              f'terminated :: {terminated}, truncated :: {truncated}')
         done = terminated or truncated
 env.close()
