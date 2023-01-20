@@ -9,15 +9,15 @@ AI agent for Mountain Car problem of class Classic Control
         reward threshold: -110
 """
 import random
-
 import gymnasium as gym
 from sarsa_max_agent import SarsaMaxAgent
+from sarsa_agent import SarsaAgent
 
 env = gym.make("MountainCar-v0", max_episode_steps=1000)
 print(env.spec)
 observation, _ = env.reset(seed=46)
 print(f'initial state --- OBS :: {observation}')
-#
+# choose from SarsaMaxAgent and SarsaAgent
 mc_agent = SarsaMaxAgent(environment=env, initial_position=observation)
 mc_agent.train_agent()
 env.close()
