@@ -7,6 +7,7 @@ class Agent:
     def __init__(self,
                  environment: gym.Env,
                  initial_position,
+                 log: bool,
                  regression_level: int,
                  learning_rate: float = 0.95,
                  discount: float = 0.95,
@@ -15,7 +16,7 @@ class Agent:
                  epsilon: float = 1,
                  epsilon_min: float = 0.1,
                  episode_count: int = 100,
-                 regression_lambda: float = 0.95,
+                 regression_lambda: float = 0.015,
                  ):
         self.env = environment
         self.discount = discount
@@ -29,21 +30,24 @@ class Agent:
         self.regression_lambda = regression_lambda
         self.regression_level = regression_level
 
+        self.log = log
+
         # statics
-        self.mid_point = initial_position[0]
+        self.mid_point = -0.3
         self.force = 0.001
         self.gravity = 0.0025
         self.right_end = 0.6
         self.left_end = -1.2
         # features
-        self.features_num = 2
+        self.features_num = 4
         self.features = [
-            # self.acceleration_feature,
+            self.acceleration_feature,
             self.dist_to_end_feature,
-            # self.next_velocity,
+            self.next_velocity,
             self.dist_to_mid_feature
         ]
-        self.weights = [0, 0]
+        self.weights = [0, 0, 0, 0]
+        self.all_episodes = []
 
     def next_velocity(self, state, action):
         position, velocity = state
@@ -90,7 +94,7 @@ class Agent:
                               + self.learning_rate * diff * feature_val
 
     def calculate_weight(self, i, diff, feature_value):
-        if self.regression_level == 0:
+        if self.regression_level == 3 or self.regression_level == 0:
             self.calculate_l_weight(i, diff, feature_value)
         elif self.regression_level == 1:
             self.calculate_l1_weight(i, diff, feature_value)
@@ -159,4 +163,5 @@ class Agent:
         for i in range(self.features_num):
             feature_value = self.features[i](curr_state, action)
             self.calculate_weight(i, diff, feature_value)
-        self.make_weights_normal()
+        if self.regression_level == 3:
+            self.make_weights_normal()

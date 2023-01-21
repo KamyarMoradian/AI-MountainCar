@@ -1,15 +1,19 @@
 from agent import Agent
 import gymnasium as gym
+import logger
 
 
 class SarsaMaxAgent(Agent):
     def __init__(self,
                  environment: gym.Env,
+                 log: bool,
                  initial_position,
                  regression_level: int):
-        super(SarsaMaxAgent, self).__init__(environment, initial_position, regression_level)
+        super(SarsaMaxAgent, self).__init__(environment, initial_position, log, regression_level)
 
     def train_agent(self):
+        terminated_num = 0
+        first_terminated = 0
         for episode in range(self.episode_count):
             curr_state, _ = self.env.reset()
             done = False
@@ -21,5 +25,12 @@ class SarsaMaxAgent(Agent):
                                               terminated=terminated, dynamic_val=max_q_value)
                 done = terminated or truncated
                 curr_state = next_state
-            print(f'episode number {episode} ::: final weights = {self.weights}')
+                if terminated:
+                    if terminated_num == 0:
+                        first_terminated = episode + 1
+                    terminated_num += 1
+            self.all_episodes.append(list(self.weights))
             self.decay_learning_rate()
+        print('Finished Training')
+        if self.log:
+            logger.log_terminated(first_terminated, terminated_num, self.episode_count, 'SarsaMax', self.regression_level)

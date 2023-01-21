@@ -12,24 +12,29 @@ import random
 import gymnasium as gym
 from sarsa_max_agent import SarsaMaxAgent
 from sarsa_agent import SarsaAgent
+import logger
 
 env = gym.make("MountainCar-v0", max_episode_steps=1000)
 print(env.spec)
-observation, _ = env.reset(seed=756)
+observation, _ = env.reset(seed=44)
 print(f'initial state --- OBS :: {observation}')
 
 # choose from SarsaMaxAgent and SarsaAgent
-mc_agent = SarsaMaxAgent(environment=env, initial_position=observation, regression_level=0)
+log = False
+mc_agent = SarsaAgent(environment=env, initial_position=observation, log=log, regression_level=2)
 mc_agent.train_agent()
+if log:
+    logger.plot_weights(mc_agent, 'Sarsa')
 env.close()
 env = gym.make("MountainCar-v0", max_episode_steps=200, render_mode='human')
 truncated = False
 terminated = False
 
 for _ in range(20):
-    rand_seed = random.randint(30, 2000)
+    rand_seed = random.randint(1, 10000)
     print(f'seed = {rand_seed}')
     observation, info = env.reset(seed=rand_seed)
+    print(f'initial state --- OBS :: {observation}')
     done = False
     while not done:
         action = mc_agent.choose_action(observation, True)
