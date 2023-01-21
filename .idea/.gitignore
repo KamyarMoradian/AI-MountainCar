@@ -8,4 +8,7 @@
 /dataSources.local.xml
 
 /plots/
+/logs/
+/terminated/
+
 *.png
