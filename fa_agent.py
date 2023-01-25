@@ -39,4 +39,11 @@ class FAAgent(Agent):
         if not os.path.exists(directory):
             os.makedirs(directory)
         with open(directory + 'FA' + '.txt', 'w') as fh:
-            fh.writelines([f'Weight {i} = {self.weights[i]}\n' for i in range(len(self.weights))])
+            fh.writelines([f'{self.weights[i]}\n' for i in range(len(self.weights))])
+
+    def load_agent(self):
+        directory = os.path.join(f'.\\agents\\')
+        if not os.path.exists(directory):
+            return
+        with open(directory + 'FA' + '.txt', 'r') as fh:
+            self.weights = [float(x) for x in fh.readlines()]

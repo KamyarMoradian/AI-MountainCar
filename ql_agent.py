@@ -41,3 +41,4 @@ class QLAgent(Agent):
                 for j in range(self.env.action_space.n):
                     fh.write(str(self.q_values[i][j]) + ' ')
                 fh.write('\n')
+
