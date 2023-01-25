@@ -69,7 +69,7 @@ def video_recorder(env, version, seed):
                                     episode_trigger=lambda x: x % 6 == 0)
 
 
-def reward_action_graph(chart_data_time, chart_data_reward, chart_data_action):
+def reward_action_graph(chart_data_time, chart_data_reward, chart_data_action, algo):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(chart_data_time, chart_data_reward,
@@ -82,12 +82,4 @@ def reward_action_graph(chart_data_time, chart_data_reward, chart_data_action):
     directory = os.path.join(f'.\\logs\\FinalCharts')
     if not os.path.exists(directory):
         os.makedirs(directory)
-    ax.figure.savefig('.\\logs\\FinalCharts\\ApproximateQLearning_chart.png')
-
-
-def save_agent(agent, agent_type):
-    directory = os.path.join(f'.\\agents\\')
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    with open(directory + agent_type + '.txt', 'w') as fh:
-        fh.writelines([f'Weight {i} = {agent.weights[i]}\n' for i in range(len(agent.weights))])
+    ax.figure.savefig(f'.\\logs\\FinalCharts\\{algo}.png')

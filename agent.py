@@ -1,6 +1,11 @@
+import time
+
 import gymnasium as gym
 from math import cos
 import numpy as np
+from abc import abstractmethod
+
+import logger
 
 
 class Agent:
@@ -15,7 +20,7 @@ class Agent:
                  learning_min: float = 0.1,
                  epsilon: float = 1,
                  epsilon_min: float = 0.1,
-                 episode_count: int = 2,
+                 episode_count: int = 400,
                  regression_lambda: float = 0.015,
                  ):
         self.env = environment
@@ -37,8 +42,16 @@ class Agent:
         self.mid_point = -0.3
         self.force = 0.001
         self.gravity = 0.0025
+        self.pos_num = 3
         self.right_end = 0.6
         self.left_end = -1.2
+        self.vel_num = 7
+        self.maximum_vel = 0.07
+        self.minimum_vel = -0.07
+
+        self.pos_space = np.linspace(self.left_end, self.right_end, self.pos_num)
+        self.vel_space = np.linspace(self.minimum_vel, self.maximum_vel, self.vel_num)
+
         # features
         self.features_num = 2
         self.features = [
@@ -132,20 +145,16 @@ class Agent:
             return next_vel
         return next_vel * -1
 
+    @abstractmethod
     def get_qvalue(self, state, action):
-        q_value = 0
-        for i in range(self.features_num):
-            feature_value = self.features[i](state, action)
-            q_value += self.weights[i] * feature_value
-        return q_value
+        pass
+
+    @abstractmethod
+    def update_values(self, curr_state, action, reward, terminated, dynamic_val):
+        pass
 
     def find_max_q_value(self, state):
         return max([self.get_qvalue(state, action) for action in range(self.env.action_space.n)])
-
-    def make_weights_normal(self):
-        weights_sum = sum([abs(w) for w in self.weights])
-        for i in range(self.features_num):
-            self.weights[i] /= weights_sum
 
     def choose_action(self, curr_state, test_mode=False):
         if test_mode:
@@ -158,12 +167,69 @@ class Agent:
             return int(np.argmax([self.get_qvalue(curr_state, action)
                                   for action in range(self.env.action_space.n)]))
 
-    def update_weights(self, curr_state, action, reward, terminated, dynamic_val):
-        target = reward + self.discount * dynamic_val * (not terminated)
-        prediction = self.get_qvalue(curr_state, action)
-        diff = target - prediction
-        for i in range(self.features_num):
-            feature_value = self.features[i](curr_state, action)
-            self.calculate_weight(i, diff, feature_value)
-        if self.technique == 3:
-            self.make_weights_normal()
+    def train_agent(self, update_policy):
+        if update_policy == 'SARSA':
+            self.sarsa_train()
+        elif update_policy == 'SARSA-MAX':
+            self.sarsa_max_train()
+
+    def sarsa_train(self):
+        print('IN SARSA')
+        terminated_num = 0
+        first_terminated = 0
+        pre = time.time()
+        for episode in range(self.episode_count):
+            curr_state, _ = self.env.reset()
+            curr_action = self.choose_action(curr_state=curr_state)
+            done = False
+            final_reward = 0
+            while not done:
+                next_state, reward, terminated, truncated, _ = self.env.step(curr_action)
+                final_reward += reward
+                next_action = self.choose_action(curr_state)
+                next_state_value = self.get_qvalue(state=curr_state, action=next_action)
+                self.update_values(curr_state=curr_state, action=curr_action, reward=int(float(reward)),
+                                   terminated=terminated, dynamic_val=next_state_value)
+                done = terminated or truncated
+                curr_state = next_state
+                curr_action = next_action
+                if terminated:
+                    if terminated_num == 0:
+                        first_terminated = episode + 1
+                    terminated_num += 1
+            self.all_episodes.append(list(self.weights))
+            self.all_values.append(final_reward)
+            self.decay_learning_rate()
+            print(f'Finished episode {episode}')
+        if self.log:
+            logger.log_terminated(first_terminated, terminated_num, self.episode_count, self.version, time.time() - pre)
+
+    def sarsa_max_train(self):
+        terminated_num = 0
+        first_terminated = 0
+        pre = time.time()
+        for episode in range(self.episode_count):
+            curr_state, _ = self.env.reset()
+            done = False
+            final_reward = 0
+            while not done:
+                action = self.choose_action(curr_state)
+                next_state, reward, terminated, truncated, _ = self.env.step(action)
+                max_q_value = self.find_max_q_value(next_state)
+                self.update_values(curr_state=curr_state, action=action, reward=int(float(reward)),
+                                   terminated=terminated, dynamic_val=max_q_value)
+                done = terminated or truncated
+                curr_state = next_state
+                final_reward += reward
+                if terminated:
+                    if terminated_num == 0:
+                        first_terminated = episode + 1
+                    terminated_num += 1
+            print(f'Finished episode {episode}')
+            self.all_episodes.append(list(self.weights))
+            self.all_values.append(final_reward)
+            self.decay_learning_rate()
+        if self.log:
+            logger.log_terminated(first_terminated, terminated_num, self.episode_count, self.version,
+                                  time.time() - pre)
+

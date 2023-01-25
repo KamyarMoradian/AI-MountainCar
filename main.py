@@ -13,17 +13,18 @@ import random
 import gymnasium as gym
 
 import logger
-from sarsa_max_agent import SarsaMaxAgent
-from sarsa_agent import SarsaAgent
+from fa_agent import FAAgent
+from ql_agent import QLAgent
 
 CONFIGURATION = {'SEED': 44,
                  'MAX_EPISODES': 1000,
-                 'MAX_STEPS': 200,
-                 'VERSION': 'FA-v5.1',
+                 'MAX_STEPS': 400,
+                 'VERSION': 'QL',
                  'LOG': False,
                  'TECHNIQUE': 3,
-                 'UPDATE_POLICY': SarsaAgent,
-                 'BASE_ALGORITHM': 'FA',
+                 'UPDATE_POLICY': 'SARSA',
+                 'BASE_ALGORITHM': QLAgent,
+                 'STR_BASE_ALGORITHM': 'QL',
                  }
 
 
@@ -32,22 +33,19 @@ def train_agent():
     print(env.spec)
     observation, _ = env.reset(seed=CONFIGURATION['SEED'])
 
-    mc_agent = CONFIGURATION['UPDATE_POLICY'](environment=env, log=CONFIGURATION['LOG'],
-                                              technique=CONFIGURATION['TECHNIQUE'], version=CONFIGURATION['VERSION'])
-    mc_agent.train_agent()
+    mc_agent = CONFIGURATION['BASE_ALGORITHM'](environment=env, log=CONFIGURATION['LOG'],
+                                               technique=CONFIGURATION['TECHNIQUE'], version=CONFIGURATION['VERSION'])
+    mc_agent.train_agent(CONFIGURATION['UPDATE_POLICY'])
     if CONFIGURATION['LOG']:
         logger.plot_weights(mc_agent, CONFIGURATION['VERSION'])
         logger.plot_rewards(mc_agent, CONFIGURATION['VERSION'])
-    logger.save_agent(mc_agent, CONFIGURATION['BASE_ALGORITHM'])
+    mc_agent.save_agent()
     env.close()
     return mc_agent
 
 
 def agent_test(mc_agent):
-    env = gym.make("MountainCar-v0", max_episode_steps=CONFIGURATION['MAX_STEPS'], render_mode='rgb_array')
-
-    truncated = False
-    terminated = False
+    env = gym.make("MountainCar-v0", max_episode_steps=CONFIGURATION['MAX_STEPS'], render_mode='human')
 
     chart_data_reward = []
     chart_data_action = []
@@ -69,7 +67,8 @@ def agent_test(mc_agent):
 
     chart_data_time = [i for i in range(len(chart_data_reward))]
 
-    logger.reward_action_graph(chart_data_time, chart_data_reward, chart_data_action)
+    logger.reward_action_graph(chart_data_time, chart_data_reward, chart_data_action,
+                               CONFIGURATION['STR_BASE_ALGORITHM'])
 
 
 def main():
