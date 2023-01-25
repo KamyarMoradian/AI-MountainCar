@@ -1,21 +1,21 @@
 import gymnasium as gym
-import numpy as np
 from math import cos
+import numpy as np
 
 
 class Agent:
     def __init__(self,
                  environment: gym.Env,
-                 initial_position,
                  log: bool,
-                 regression_level: int,
+                 technique: int,
+                 version: str,
                  learning_rate: float = 0.95,
                  discount: float = 0.95,
                  learning_decay: float = 0.9,
                  learning_min: float = 0.1,
                  epsilon: float = 1,
                  epsilon_min: float = 0.1,
-                 episode_count: int = 100,
+                 episode_count: int = 2,
                  regression_lambda: float = 0.015,
                  ):
         self.env = environment
@@ -28,8 +28,9 @@ class Agent:
         self.epsilon_min = epsilon_min
         self.episode_count = episode_count
         self.regression_lambda = regression_lambda
-        self.regression_level = regression_level
+        self.technique = technique
 
+        self.version = version
         self.log = log
 
         # statics
@@ -39,15 +40,16 @@ class Agent:
         self.right_end = 0.6
         self.left_end = -1.2
         # features
-        self.features_num = 4
+        self.features_num = 2
         self.features = [
-            self.acceleration_feature,
+            # self.acceleration_feature,
             self.dist_to_end_feature,
-            self.next_velocity,
+            # self.next_velocity,
             self.dist_to_mid_feature
         ]
-        self.weights = [0, 0, 0, 0]
+        self.weights = [0, 0]
         self.all_episodes = []
+        self.all_values = []
 
     def next_velocity(self, state, action):
         position, velocity = state
@@ -94,11 +96,11 @@ class Agent:
                               + self.learning_rate * diff * feature_val
 
     def calculate_weight(self, i, diff, feature_value):
-        if self.regression_level == 3 or self.regression_level == 0:
+        if self.technique == 3 or self.technique == 0:
             self.calculate_l_weight(i, diff, feature_value)
-        elif self.regression_level == 1:
+        elif self.technique == 1:
             self.calculate_l1_weight(i, diff, feature_value)
-        elif self.regression_level == 2:
+        elif self.technique == 2:
             self.calculate_l2_weight(i, diff, feature_value)
 
     def acceleration_feature(self, state, action):
@@ -163,5 +165,5 @@ class Agent:
         for i in range(self.features_num):
             feature_value = self.features[i](curr_state, action)
             self.calculate_weight(i, diff, feature_value)
-        if self.regression_level == 3:
+        if self.technique == 3:
             self.make_weights_normal()

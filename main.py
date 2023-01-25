@@ -9,10 +9,12 @@ AI agent for Mountain Car problem of class Classic Control
         reward threshold: -110
 """
 import random
+
 import gymnasium as gym
+
+import logger
 from sarsa_max_agent import SarsaMaxAgent
 from sarsa_agent import SarsaAgent
-import logger
 
 env = gym.make("MountainCar-v0", max_episode_steps=1000)
 print(env.spec)
@@ -20,21 +22,23 @@ observation, _ = env.reset(seed=44)
 print(f'initial state --- OBS :: {observation}')
 
 # choose from SarsaMaxAgent and SarsaAgent
-log = False
-mc_agent = SarsaAgent(environment=env, initial_position=observation, log=log, regression_level=2)
+log = True
+technique = 3
+version = 'FA-v5.1'
+mc_agent = SarsaAgent(environment=env, log=log, technique=technique, version=version)
 mc_agent.train_agent()
 if log:
-    logger.plot_weights(mc_agent, 'Sarsa')
+    logger.plot_weights(mc_agent, version)
+    logger.plot_rewards(mc_agent, version)
 env.close()
-env = gym.make("MountainCar-v0", max_episode_steps=200, render_mode='human')
+env = gym.make("MountainCar-v0", max_episode_steps=200, render_mode='rgb_array')
 truncated = False
 terminated = False
 
-for _ in range(20):
+for _ in range(15):
     rand_seed = random.randint(1, 10000)
-    print(f'seed = {rand_seed}')
     observation, info = env.reset(seed=rand_seed)
-    print(f'initial state --- OBS :: {observation}')
+    env = logger.video_recorder(env, version, rand_seed)
     done = False
     while not done:
         action = mc_agent.choose_action(observation, True)

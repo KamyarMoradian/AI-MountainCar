@@ -1,9 +1,34 @@
+import gymnasium as gym
 import matplotlib.pyplot as plt
 import os
 
 
-def plot_weights(agent, algo) -> None:
-    path = os.path.join('./logs/plots', algo, str(agent.regression_level))
+def plot_rewards(agent, version):
+    print('Plotting rewards...')
+    directory = r'.\\logs\\plots\\rewards'
+    path = os.path.join(directory, version)
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    x = [i for i in range(agent.episode_count)]
+
+    plt.title(f'{version}-rewards')
+    plt.xlabel('Time step')
+    plt.ylabel('Value')
+
+    explore_history = [y for y in agent.all_values]
+
+    plt.plot(x, explore_history, label=f'reward', color='tab:blue')
+
+    plt.legend()
+    plt.savefig(path + f'/reward.png')
+    plt.close()
+
+
+def plot_weights(agent, version) -> None:
+    print('Plotting weights...')
+    directory = r'.\\logs\\plots\\weights'
+    path = os.path.join(directory, version)
     if not os.path.exists(path):
         os.makedirs(path)
 
@@ -12,7 +37,7 @@ def plot_weights(agent, algo) -> None:
     for i in range(agent.features_num):
         plt.title(f'Weight {i + 1}')
         plt.xlabel('Time step')
-        plt.ylabel('Value')  # noqa
+        plt.ylabel('Value')
 
         explore_history = [y[i] for y in agent.all_episodes]
         print(explore_history)
@@ -24,11 +49,21 @@ def plot_weights(agent, algo) -> None:
         plt.close()
 
 
-def log_terminated(first_terminated, terminated_count, episode_count, algo, regression_level):
-    path = os.path.join(f'.\\logs\\terminated\\{regression_level}\\')
+def log_terminated(first_terminated, terminated_count, episode_count, version, time_taken) -> None:
+    directory = os.path.join(f'.\\logs\\terminated')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    path = os.path.join(directory, version + '\\')
     if not os.path.exists(path):
         os.makedirs(path)
-    with open(path + algo + '.txt', 'w') as fh:
+    with open(path + 'result.txt', 'w') as fh:
         fh.writelines([f'Number of episodes = {episode_count}\n',
                        f'Number of terminated episodes = {terminated_count}\n',
-                       f'First time terminated = {first_terminated}\n'])
+                       f'First time terminated = {first_terminated}\n',
+                       f'Time Taken = {time_taken}'])
+
+
+def video_recorder(env, version, seed):
+    return gym.wrappers.RecordVideo(env, f'video\\{version}\\{str(seed)}',
+                                    name_prefix=version + '_' + 'seed' + str(seed),
+                                    episode_trigger=lambda x: x % 6 == 0)
