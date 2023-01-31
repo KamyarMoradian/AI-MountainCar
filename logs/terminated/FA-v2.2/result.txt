@@ -1,4 +1,0 @@
-Number of episodes = 1000
-Number of terminated episodes = 1000
-First time terminated = 1
-Time Taken = 18.69284987449646
