@@ -20,7 +20,7 @@ class Agent:
                  learning_min: float = 0.1,
                  epsilon: float = 1,
                  epsilon_min: float = 0.1,
-                 episode_count: int = 400,
+                 episode_count: int = 1000,
                  regression_lambda: float = 0.015,
                  ):
         self.env = environment
@@ -42,10 +42,10 @@ class Agent:
         self.mid_point = -0.3
         self.force = 0.001
         self.gravity = 0.0025
-        self.pos_num = 3
+        self.pos_num = 15
         self.right_end = 0.6
         self.left_end = -1.2
-        self.vel_num = 7
+        self.vel_num = 15
         self.maximum_vel = 0.07
         self.minimum_vel = -0.07
 
